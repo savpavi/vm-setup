@@ -1,0 +1,11 @@
+module lookingglass_kvmfr 1.0;
+
+require {
+    type svirt_t;
+    attribute device_node;
+    class chr_file { getattr ioctl map open read write };
+}
+
+type kvmfr_device_t, device_node;
+
+allow svirt_t kvmfr_device_t:chr_file { getattr ioctl map open read write };

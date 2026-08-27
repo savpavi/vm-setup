@@ -1,0 +1,14 @@
+# Kimlik bilgisi ve calisma durumu
+proton-to-gmail/.env
+proton-to-gmail/state.sqlite3
+proton-to-gmail/conversations.json
+*.pid
+*.log
+
+# Kisisel baglam iceren MBIF yedekleri
+mbif-originals/
+
+# Tek seferlik calisma ciktilari
+music-*.txt
+music-*.log
+*-status.txt

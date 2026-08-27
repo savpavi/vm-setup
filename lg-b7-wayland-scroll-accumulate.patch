@@ -1,0 +1,38 @@
+--- /tmp/claude-1000/-home-savpavi/9bda1652-6599-44d8-a24c-c5ae55584463/scratchpad/input.c.orig	2026-08-21 09:40:26.211475621 +0300
++++ client/displayservers/Wayland/input.c	2026-08-21 09:39:15.128085649 +0300
+@@ -91,12 +91,29 @@
+   if (axis != WL_POINTER_AXIS_VERTICAL_SCROLL)
+     return;
+ 
+-  int button = value > 0 ?
+-    5 /* SPICE_MOUSE_BUTTON_DOWN */ :
+-    4 /* SPICE_MOUSE_BUTTON_UP */;
+-  app_handleButtonPress(button);
+-  app_handleButtonRelease(button);
+-  app_handleWheelMotion(wl_fixed_to_double(value) / 15.0);
++  /* backport of upstream master wlInputPointerAxis: accumulate the axis delta
++   * and emit one click per 15.0 units instead of one click per event, so
++   * hi-res wheels (which deliver many small events per notch on compositors
++   * like Hyprland) do not multiply the scroll speed in the guest */
++  static double scrollState = 0.0;
++  const double delta = wl_fixed_to_double(value);
++  scrollState += delta;
++
++  while (scrollState > 7.5)
++  {
++    app_handleButtonPress(5 /* SPICE_MOUSE_BUTTON_DOWN */);
++    app_handleButtonRelease(5);
++    scrollState -= 15.0;
++  }
++
++  while (scrollState < -7.5)
++  {
++    app_handleButtonPress(4 /* SPICE_MOUSE_BUTTON_UP */);
++    app_handleButtonRelease(4);
++    scrollState += 15.0;
++  }
++
++  app_handleWheelMotion(delta / 15.0);
+ }
+ 
+ static int mapWaylandToSpiceButton(uint32_t button)
