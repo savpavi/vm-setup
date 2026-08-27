@@ -12,3 +12,4 @@ mbif-originals/
 music-*.txt
 music-*.log
 *-status.txt
+*.bak-*
