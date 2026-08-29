@@ -1,0 +1,5 @@
+UUID=976524cd-3130-4726-b5ed-c5a6b7d7c673 /srv/disk12 ext4 defaults,noatime,nofail,x-systemd.device-timeout=30 0 2
+UUID=d7b46184-f7f2-475c-824a-fff7d2a01360 /srv/disk6 ext4 defaults,noatime,nofail,x-systemd.device-timeout=30 0 2
+/srv/disk12:/srv/disk6:/srv/disk1 /srv/storage fuse.mergerfs defaults,allow_other,use_ino,cache.files=off,category.create=mfs,minfreespace=100G,fsname=archive-pool,nofail,x-systemd.requires-mounts-for=/srv/disk12,x-systemd.requires-mounts-for=/srv/disk6,x-systemd.requires-mounts-for=/srv/disk1 0 0
+UUID=f6812f34-02f4-4bf0-a924-c04943a72830 /srv/disk1 ext4 defaults,noatime,nofail,x-systemd.device-timeout=30 0 2
+UUID=7f781fc2-14de-4611-97eb-c387736604b5 /srv/lexar ext4 defaults,noatime,nofail,x-systemd.device-timeout=30 0 2
