@@ -203,10 +203,13 @@ phase_libvirt() {
       -e 's#/usr/share/edk2/ovmf/OVMF_VARS_4M.secboot.qcow2#/usr/share/edk2/x64/OVMF_VARS.4m.fd#' \
       -e "s#format='qcow2'\(.*pflash\)#format='raw'\1#" \
       -e "s#templateFormat='qcow2' format='qcow2'#templateFormat='raw' format='raw'#" -e 's#EGE-Windows11_VARS.qcow2#EGE-Windows11_VARS.fd#' \
+      -e 's#/var/lib/libvirt/images/windows-p2v/#/srv/lexar/VM/#g' \
       "$BACKUP/vm/EGE-Windows11.inactive.xml" > "$x"
   grep -n -E "loader|nvram" "$x"
   warn "Yukarıdaki loader/nvram yollarının Arch'ta var olduğunu doğrula: ls /usr/share/edk2/x64/"
-  warn "Disk imajı: /var/lib/libvirt/images/windows-p2v/EGE.qcow2 — yedekten kopyala ($BACKUP/vm/images/), sonra:"
+  warn "Disk imajı kalıcı olarak /srv/lexar/VM/EGE.qcow2 (+ virtio-win.iso) — XML o yola çevrildi; kopyalama gerekmez. Lexar mount olmalı (srv fazı)."
+  [[ -f /srv/lexar/VM/EGE.qcow2 ]] && qemu-img check /srv/lexar/VM/EGE.qcow2 | tail -2 || warn "/srv/lexar/VM/EGE.qcow2 bulunamadı!"
+  echo "  İzin: sudo chown savpavi:kvm /srv/lexar/VM/*.qcow2 (qemu.conf user=savpavi) ; dizin 755. Sonra:"
   echo "    sudo virsh define $x"
   echo "    sudo virsh net-define $BACKUP/vm/net-default.xml; sudo virsh net-autostart default; sudo virsh net-start default"
   echo "  qemu.conf: user='$ME', cgroup_device_acl'e /dev/kvmfr0 — referans $BACKUP/vm/vm-setup-repo/qemu.conf.looking-glass"

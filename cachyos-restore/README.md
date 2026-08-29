@@ -31,7 +31,7 @@ Her fazdan önce sorar; `YES=1` ile sormadan geçer.
 | `home` | Yedekten seçili klasörler (mod 1) veya her şey (mod 2). Vault'u yedekten değil git/Syncthing'den al. |
 | `services` | tailscaled, syncthing@savpavi, libvirt; kullanıcı timer'ları (vault-git-backup, archive-critical-backup, copyparty). |
 | `vm` | qemu/libvirt/looking-glass paketleri, `vfio.conf` + `kvmfr` modprobe/udev, mkinitcpio MODULES'a vfio öne, `mkinitcpio -P`. Kernel cmdline'ı önyükleyiciye göre **elle** (limine / sd-boot / grub — script yazdırır). |
-| `libvirt` | VM XML'ini Arch edk2 yollarına çevirir (`/usr/share/edk2/x64/*.4m.fd`, qcow2→raw pflash), define/net komutlarını yazdırır. Disk imajı ve nvram yedekten elle kopyalanır. |
+| `libvirt` | VM XML'ini Arch edk2 yollarına çevirir (`/usr/share/edk2/x64/*.4m.fd`, qcow2→raw pflash), disk yolunu **`/srv/lexar/VM/`** olarak çevirir, define/net komutlarını yazdırır. VM diski kalıcı olarak Lexar'da (29.08.2026'da taşındı); nvram yedekten elle. |
 | `flatpak` | Fedora'daki uygulama listesi (runtime'lar hariç) `--user` olarak. |
 | `pkgs` | Yalnız referans: Fedora `dnf-userinstalled.txt` nerede, eşlenmemiş paket nasıl aranır; zsh'i varsayılan kabuk yapar. |
 
