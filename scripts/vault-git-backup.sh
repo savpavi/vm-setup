@@ -5,8 +5,13 @@
 #   - github.com/savpavi/obsidian-aktif-kasa       (private)
 set -uo pipefail
 
-vault=/home/savpavi/Documents/Obsidian/Aktif\ Kasa
-status=/home/savpavi/vm-setup/vault-git-backup-status.txt
+# Ana dalin uzak gecmisini degistirmeden mevcut kasayi surumle.
+backup_branch=backup/fedora-host-20260911
+exec 9>$HOME/.cache/vault-git-backup.lock
+flock -n 9 || exit 0
+
+vault="${VAULT_DIR:-$HOME/Documents/Obsidian/Aktif Kasa}"
+status="${STATUS_FILE:-$HOME/vm-setup/vault-git-backup-status.txt}"
 
 note() {  # bildirim varsa gonder, yoksa sessizce gec (systemd icinde DBus olmayabilir)
     command -v notify-send >/dev/null 2>&1 || return 0
@@ -23,14 +28,12 @@ cd "$vault" || fail vault-dizini "vault dizinine girilemedi"
 
 git add -A || fail git-add "git add basarisiz"
 
-if git diff --cached --quiet; then
-    printf 'SUCCESS stage=nochange %(%F %T %z)T\n' -1 >"$status"
-    exit 0
-fi
-
 count=$(git diff --cached --name-only | wc -l)
-git commit -q -m "Otomatik yedek $(date '+%F %T')" || fail commit "commit basarisiz"
-git push -q backup main || fail push "push basarisiz (yerel bare veya GitHub erisilemedi)"
+if ! git diff --cached --quiet; then
+    git commit -q -m "Otomatik yedek $(date '+%F %T')" || fail commit "commit basarisiz"
+fi
+# Degisiklik olmasa da onceki basarisiz push yeniden denenir.
+git push -q backup "HEAD:refs/heads/$backup_branch" || fail push "push basarisiz (yerel bare veya GitHub erisilemedi)"
 
 printf 'SUCCESS stage=pushed %(%F %T %z)T\n' -1 >"$status"
 note -u low -i folder-cloud 'Vault yedegi tamamlandi' "$count dosya islendi."

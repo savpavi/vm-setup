@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -eu
+
+readonly vm_name="${LG_VM_NAME:-win11}"
+readonly libvirt_uri="qemu:///system"
+# Keep the user-tested wheel fix on Niri; retain the original client elsewhere.
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *niri* ]]; then
+    readonly looking_glass="$HOME/src/looking-glass/client/build/looking-glass-client"
+else
+    readonly looking_glass="/usr/local/bin/looking-glass-client"
+fi
+
+if client_pid="$(pgrep -f "^${looking_glass}([[:space:]]|$)" | head -n 1)" && [[ -n "$client_pid" ]]; then
+    # X11: revisit the existing window, including its current dwm tag.
+    if [[ "${XDG_SESSION_TYPE:-}" == x11 ]] && command -v xdotool >/dev/null; then
+        window_id="$(xdotool search --all --pid "$client_pid" --class '^looking-glass-client$' 2>/dev/null | head -n 1)" || true
+        if [[ -n "$window_id" ]]; then
+            xdotool windowactivate "$window_id"
+        fi
+    fi
+    exit 0
+fi
+
+vm_state="$(virsh --connect "$libvirt_uri" domstate "$vm_name")"
+
+case "$vm_state" in
+    running)
+        ;;
+    paused)
+        virsh --connect "$libvirt_uri" resume "$vm_name"
+        ;;
+    "shut off")
+        virsh --connect "$libvirt_uri" start "$vm_name"
+        ;;
+    *)
+        notify-send --urgency=critical "Windows VM" "VM başlatılamadı: $vm_state"
+        exit 1
+        ;;
+esac
+
+# Niri: native Wayland provides working pointer capture (XWayland leaked to other output).
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *niri* ]]; then
+    exec "$looking_glass"
+fi
+
+# Reveal a newly mapped X11 window on the monitor selected by dwm rules.
+if [[ "${XDG_SESSION_TYPE:-}" == x11 ]] && command -v xdotool >/dev/null; then
+    launcher_pid=$$
+    (
+        for ((attempt = 0; attempt < 100; attempt++)); do
+            window_id="$(xdotool search --all --pid "$launcher_pid" --class '^looking-glass-client$' 2>/dev/null | head -n 1)" || true
+            if [[ -n "$window_id" ]]; then
+                sleep 0.2
+                xdotool windowactivate "$window_id" && exit 0
+            fi
+            sleep 0.1
+        done
+    ) &
+fi
+
+# Hyprland: retain the tested X11 path for Looking Glass B7 mouse-wheel support.
+exec env -u WAYLAND_DISPLAY "$looking_glass"

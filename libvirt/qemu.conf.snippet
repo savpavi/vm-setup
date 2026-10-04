@@ -1,0 +1,9 @@
+# Add to /etc/libvirt/qemu.conf so the VM may open the Looking Glass shared-memory device.
+cgroup_device_acl = [
+    "/dev/null", "/dev/full", "/dev/zero",
+    "/dev/random", "/dev/urandom",
+    "/dev/ptmx", "/dev/userfaultfd",
+    "/dev/kvm", "/dev/vhost-net", "/dev/net/tun",
+    "/dev/vfio/vfio",
+    "/dev/kvmfr0"
+]

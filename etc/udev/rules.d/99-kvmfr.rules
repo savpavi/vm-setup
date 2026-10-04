@@ -1,0 +1,1 @@
+SUBSYSTEM=="kvmfr", KERNEL=="kvmfr0", OWNER="YOUR_USER", GROUP="qemu", MODE="0660"

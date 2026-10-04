@@ -1,5 +1,5 @@
---- /tmp/claude-1000/-home-savpavi/9bda1652-6599-44d8-a24c-c5ae55584463/scratchpad/input.c.orig	2026-08-21 09:40:26.211475621 +0300
-+++ client/displayservers/Wayland/input.c	2026-08-21 09:39:15.128085649 +0300
+--- a/client/displayservers/Wayland/input.c
++++ b/client/displayservers/Wayland/input.c
 @@ -91,12 +91,29 @@
    if (axis != WL_POINTER_AXIS_VERTICAL_SCROLL)
      return;
