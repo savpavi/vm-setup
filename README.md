@@ -43,6 +43,10 @@ sudo semodule -i lookingglass_kvmfr.pp
 
 Then merge `libvirt/qemu.conf.snippet` into `/etc/libvirt/qemu.conf`, add the `hostdev` XML to the VM with `virsh edit`, and reboot. After boot, `lspci -k -s 07:00.0` should report `vfio-pci` as the driver.
 
+## Arch Linux
+
+`arch/setup-vfio.sh` does the same setup on Arch in stages: `check pkgs host cmdline libvirt vm client`, then `verify` after a reboot. It writes the modprobe/udev files, adds a mkinitcpio drop-in (`MODULES+=(vfio_pci vfio vfio_iommu_type1)`), appends `iommu=pt vfio-pci.ids=…` to systemd-boot, GRUB, Limine or `/etc/kernel/cmdline` (each edited file is backed up first), installs Looking Glass and the `kvmfr` DKMS module from the AUR, and restores the VM from my backup (disk image, TPM state, UEFI variables converted from qcow2 to raw, domain XML with the Fedora firmware paths removed). `--dry-run` prints the steps without changing anything. Differences from Fedora: QEMU runs as `libvirt-qemu`, so `/dev/kvmfr0` is owned by `libvirt-qemu:kvm`, and there is no SELinux module.
+
 ## Scripts
 
 - `start-windows-looking-glass` starts or resumes the VM (`LG_VM_NAME`, default `win11`) and opens the Looking Glass client; it reuses an existing client window and picks the X11 or native Wayland path per desktop.
