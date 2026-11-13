@@ -150,6 +150,10 @@ stage_libvirt() {
     (( DRY )) || grep -v '^#' "$REPO/libvirt/qemu.conf.snippet" | sudo tee -a "$conf" >/dev/null
     echo "+ cgroup_device_acl with /dev/kvmfr0"
   fi
+  # archinstall can enable ufw next to firewalld; its INPUT drop policy silently eats the guest's DHCP on virbr0.
+  if systemctl is-active -q ufw 2>/dev/null; then
+    warn "ufw is active: the VM will get no DHCP lease on virbr0. Disable it (firewalld stays) or allow virbr0 in ufw"
+  fi
   run sudo systemctl enable --now libvirtd.socket || return 1
   if ! sudo virsh net-info default >/dev/null 2>&1; then
     local net="$BACKUP/vm/net-default.xml"
@@ -166,7 +170,20 @@ stage_vm() {
   [[ -d $R/vm-images ]] || { warn "$R/vm-images not found: root-backup.sh was not run before the reinstall"; return 1; }
 
   say "disk images"
-  run sudo mkdir -p /var/lib/libvirt/images
+  # On btrfs keep the images in their own subvolume (out of snapper's root snapshots) with CoW off (qcow2 fragments badly).
+  local img=/var/lib/libvirt/images
+  if [[ $(stat -f -c %T / 2>/dev/null) == btrfs ]] && ! sudo btrfs subvolume show "$img" >/dev/null 2>&1; then
+    if [[ ! -d $img ]] || [[ -z $(sudo find "$img" -mindepth 1 -print -quit) ]]; then
+      [[ -d $img ]] && run sudo rmdir "$img"
+      run sudo mkdir -p /var/lib/libvirt
+      run sudo btrfs subvolume create "$img" || return 1
+      run sudo chattr +C "$img"
+      run sudo chmod 711 "$img"
+    else
+      warn "$img is a non-empty plain directory; left as is (CoW stays on)"
+    fi
+  fi
+  run sudo mkdir -p "$img"
   run sudo rsync -a --sparse --update --info=progress2 --exclude=listing.txt "$R/vm-images/" /var/lib/libvirt/images/ || return 1
   run sudo chown -R root:root /var/lib/libvirt/images
 
