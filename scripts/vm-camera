@@ -1,0 +1,55 @@
+#!/bin/sh
+# Hand the Logitech C920 webcam to the Windows VM and back.
+# While attached, the host cannot use the camera (and its microphone).
+#
+#   vm-camera          toggle
+#   vm-camera on|off   attach / detach
+#   vm-camera status   print "on" or "off"
+#
+# Live attach only: the VM config is not changed, so a VM restart (or host
+# reboot) gives the camera back to the host.
+set -eu
+
+DOMAIN="${VM_DOMAIN:-EGE-Windows11}"
+VENDOR=0x046d
+PRODUCT=0x08e5   # HD Pro Webcam C920
+export LIBVIRT_DEFAULT_URI=qemu:///system
+
+xml=$(mktemp)
+trap 'rm -f "$xml"' EXIT INT TERM
+cat > "$xml" <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <vendor id='$VENDOR'/>
+    <product id='$PRODUCT'/>
+  </source>
+</hostdev>
+EOF
+
+attached() {
+  virsh dumpxml "$DOMAIN" 2>/dev/null | grep -q "<product id='$PRODUCT'/>"
+}
+
+note() {
+  echo "$1"
+  command -v notify-send >/dev/null && notify-send -a vm-camera "Kamera" "$1" || true
+}
+
+case "${1:-toggle}" in
+  status) attached && echo on || echo off; exit 0 ;;
+  toggle) attached && set -- off || set -- on ;;
+esac
+
+case "$1" in
+  on)
+    attached && { note "Kamera zaten VM'de"; exit 0; }
+    virsh attach-device "$DOMAIN" "$xml" --live >/dev/null
+    note "Kamera Windows VM'e verildi"
+    ;;
+  off)
+    attached || { note "Kamera zaten host'ta"; exit 0; }
+    virsh detach-device "$DOMAIN" "$xml" --live >/dev/null
+    note "Kamera host'a geri alındı"
+    ;;
+  *) echo "usage: vm-camera [on|off|toggle|status]" >&2; exit 2 ;;
+esac
